@@ -1,7 +1,6 @@
 import "server-only";
+import { adminBizCol } from "@/lib/server/business";
 import type { Query, QueryDocumentSnapshot } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { REWARDS_PROJECT_ID } from "@/lib/rewardsConfig";
 import { pendingRedeemPoints } from "@/lib/rewardsRules";
 import { OrderStatus } from "@/types/enum";
 
@@ -20,8 +19,7 @@ export const OPEN_ORDER_STATUSES = [
 
 /** The member's open online orders (this site's `orders`). */
 export function memberOpenOrdersQuery(memberId: string): Query {
-  return adminDb
-    .collection("orders")
+  return adminBizCol("orders")
     .where("loyalty.memberId", "==", memberId)
     .where("status", "in", [...OPEN_ORDER_STATUSES]);
 }
@@ -36,37 +34,19 @@ export function pendingPointsFromDocs(docs: QueryDocumentSnapshot[]): number {
 
 export type MemberProfile = { name: string; points: number };
 
-type FirestoreRestValue = { stringValue?: string; integerValue?: string; doubleValue?: number };
-
 /**
- * The member's name and points balance, read from the rewards project as the member
- * themselves (their sign-in token; the rewards rules let members read their own doc) — so
- * they come from the rewards database, not from the browser. Null if it can't be read.
+ * The member's name and points balance from businesses/{id}/members/{memberId} (Admin
+ * SDK, same project) — so they come from the database, not from the browser. Call only
+ * with a memberId from a verified sign-in token. Null if it can't be read.
  */
-export async function fetchMemberProfile(
-  idToken: string,
-  memberId: string,
-): Promise<MemberProfile | null> {
-  if (!REWARDS_PROJECT_ID) return null;
-  const url =
-    `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(REWARDS_PROJECT_ID)}` +
-    `/databases/(default)/documents/members/${encodeURIComponent(memberId)}` +
-    `?mask.fieldPaths=points&mask.fieldPaths=name`;
+export async function fetchMemberProfile(memberId: string): Promise<MemberProfile | null> {
   try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${idToken}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return null;
-    const body = (await res.json()) as {
-      fields?: { points?: FirestoreRestValue; name?: FirestoreRestValue };
-    };
-    const rawPoints = body.fields?.points;
-    const points =
-      rawPoints?.integerValue != null ? Number(rawPoints.integerValue) : rawPoints?.doubleValue;
+    const snap = await adminBizCol("members").doc(memberId).get();
+    if (!snap.exists) return null;
+    const points = snap.get("points");
     if (typeof points !== "number" || !Number.isFinite(points)) return null;
-    return { name: body.fields?.name?.stringValue?.trim() ?? "", points };
+    const name = snap.get("name");
+    return { name: typeof name === "string" ? name.trim() : "", points };
   } catch {
     return null;
   }

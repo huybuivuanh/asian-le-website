@@ -1,6 +1,6 @@
+import { bizDoc } from "@/lib/business";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { onSnapshot } from "firebase/firestore";
 import { useLiveStoreSettings } from "@/hooks/useLiveStoreSettings";
 import { getStoreLocalNow, isStorePaused, weekdayKeyForDateStr } from "@/lib/availability";
 import {
@@ -75,7 +75,7 @@ export function useReservationForm(initialStoreSettings: StoreSettings) {
   const confirmingOrderId = submitState.status === "confirming" ? submitState.orderId : null;
   useEffect(() => {
     if (!confirmingOrderId) return;
-    return onSnapshot(doc(db, "orders", confirmingOrderId), (snapshot) => {
+    return onSnapshot(bizDoc("orders", confirmingOrderId), (snapshot) => {
       const status = snapshot.data()?.status as OrderStatus | undefined;
       setSubmitState((prev) => {
         if (prev.status !== "confirming") return prev;

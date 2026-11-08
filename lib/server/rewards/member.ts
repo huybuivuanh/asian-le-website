@@ -6,7 +6,7 @@ import { fetchMemberProfile, type MemberProfile } from "@/lib/server/rewards/poi
 /** A rewards member whose sign-in token checked out. */
 export type VerifiedMember = {
   memberId: string;
-  /** Name and balance from the rewards database — null if it couldn't be read just now. */
+  /** Name and balance from the database — null if it couldn't be read just now. */
   profile: MemberProfile | null;
 };
 
@@ -27,7 +27,7 @@ export async function resolveRewardsMember(
       status: 401,
     };
   }
-  const profile = await fetchMemberProfile(rewardsIdToken, memberId);
+  const profile = await fetchMemberProfile(memberId);
   return { member: { memberId, profile } };
 }
 

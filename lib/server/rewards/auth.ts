@@ -3,8 +3,8 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { REWARDS_PROJECT_ID } from "@/lib/rewardsConfig";
 
 /**
- * Verifies a sign-in token from the rewards project (asian-le-rewards), so an order can be
- * linked to a member without trusting the browser. Checking a token only needs the
+ * Verifies a customer's sign-in token for the shared project (the same login as the rewards
+ * app), so an order can be linked to a member without trusting the browser. Checking a token only needs the
  * project id and Google's public keys — no rewards service account here.
  *
  * Done with `jose` directly, following Google's steps for verifying Firebase ID tokens

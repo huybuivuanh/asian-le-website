@@ -1,7 +1,7 @@
+import { bizDoc } from "@/lib/business";
 import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { onSnapshot } from "firebase/firestore";
 import { postJson } from "@/lib/apiClient";
-import { db } from "@/lib/firebase";
 import type { FulfillmentWire } from "@/lib/orderApi";
 import { OrderStatus, TakeOutFulfillmentKind } from "@/types/enum";
 
@@ -46,7 +46,7 @@ export function usePlacedOrder() {
   const confirmingOrderId = submitState.status === "confirming" ? submitState.orderId : null;
   useEffect(() => {
     if (!confirmingOrderId) return;
-    return onSnapshot(doc(db, "orders", confirmingOrderId), (snapshot) => {
+    return onSnapshot(bizDoc("orders", confirmingOrderId), (snapshot) => {
       const data = snapshot.data();
       const status = data?.status as OrderStatus | undefined;
       setSubmitState((prev) => {

@@ -1,3 +1,4 @@
+import { adminBizCol } from "@/lib/server/business";
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { jsonError } from "@/lib/server/http";
@@ -14,7 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ orderId: string }> },
 ) {
   const { orderId } = await params;
-  const ref = adminDb.collection("orders").doc(orderId);
+  const ref = adminBizCol("orders").doc(orderId);
 
   const result = await adminDb.runTransaction(async (tx) => {
     const snapshot = await tx.get(ref);

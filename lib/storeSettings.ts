@@ -1,6 +1,6 @@
+import { bizDoc } from "@/lib/business";
 import { cache } from "react";
-import { doc, getDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDoc, Timestamp } from "firebase/firestore";
 import { INDEFINITE_PAUSE } from "@/lib/availability";
 
 /**
@@ -104,7 +104,7 @@ export function mapStoreSettingsDoc(
 }
 
 export async function fetchStoreSettingsForServer(): Promise<StoreSettings> {
-  const snapshot = await getDoc(doc(db, "settings", "store"));
+  const snapshot = await getDoc(bizDoc("settings", "store"));
   return mapStoreSettingsDoc(snapshot.exists() ? snapshot.data() : undefined);
 }
 

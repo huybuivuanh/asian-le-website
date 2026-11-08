@@ -1,6 +1,6 @@
+import { bizCol } from "@/lib/business";
 import { cache } from "react";
 import {
-  collection,
   getDocs,
   orderBy,
   query,
@@ -8,7 +8,6 @@ import {
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { mapImageItemField, sortAlphabetically } from "@/lib/utils";
 import { KitchenType } from "@/types/enum";
 
@@ -148,24 +147,24 @@ export function mapDocToItemOption(doc: QueryDocumentSnapshot<DocumentData>): It
 }
 
 export async function fetchCategoriesForServer(): Promise<FoodCategory[]> {
-  const q = query(collection(db, "categories"), orderBy("order"));
+  const q = query(bizCol("webCategories"), orderBy("order"));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(mapDocToFoodCategory);
 }
 
 export async function fetchMenuItemsForServer(): Promise<MenuItem[]> {
-  const snapshot = await getDocs(collection(db, "menuItems"));
+  const snapshot = await getDocs(bizCol("webMenuItems"));
   const items = snapshot.docs.map(mapDocToMenuItem);
   return sortAlphabetically(items, (item) => item.name);
 }
 
 export async function fetchOptionGroupsForServer(): Promise<OptionGroup[]> {
-  const snapshot = await getDocs(collection(db, "optionGroups"));
+  const snapshot = await getDocs(bizCol("webOptionGroups"));
   return snapshot.docs.map(mapDocToOptionGroup);
 }
 
 export async function fetchItemOptionsForServer(): Promise<ItemOption[]> {
-  const snapshot = await getDocs(collection(db, "options"));
+  const snapshot = await getDocs(bizCol("webOptions"));
   return snapshot.docs.map(mapDocToItemOption);
 }
 

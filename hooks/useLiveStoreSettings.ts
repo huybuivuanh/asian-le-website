@@ -1,8 +1,8 @@
 "use client";
 
+import { bizDoc } from "@/lib/business";
 import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { onSnapshot } from "firebase/firestore";
 import { mapStoreSettingsDoc } from "@/lib/storeSettings";
 
 /**
@@ -16,7 +16,7 @@ export function useLiveStoreSettings(initial: StoreSettings): StoreSettings {
   const [storeSettings, setStoreSettings] = useState(initial);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "settings", "store"), (snapshot) => {
+    const unsub = onSnapshot(bizDoc("settings", "store"), (snapshot) => {
       setStoreSettings(mapStoreSettingsDoc(snapshot.data(), initial));
     });
     return unsub;

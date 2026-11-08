@@ -32,14 +32,17 @@ Placing an order additionally requires a Firebase Admin service account (server-
 SERVICE_ACCOUNT_KEY      # the full service-account JSON, as a single-line string
 ```
 
-Optional — Asian Le Rewards sign-in at checkout (public web config of the separate `asian-le-rewards` Firebase project; without these the rewards box is hidden). `lib/rewardsConfig.ts` reads the config (safe anywhere), `lib/rewardsFirebase.ts` is the browser connection and `lib/rewardsClient.ts` the sign-in calls behind `hooks/useRewardsMember.ts`. On the server, `lib/server/rewards/auth.ts` verifies the member's sign-in token and `lib/server/rewards/member.ts` reads their name and points from the rewards project; `/api/orders` saves `order.loyalty = { memberId, memberName }` (same field as the POS). Points are earned later by the `asian-le-orders` admin app on Complete:
+Required — `NEXT_PUBLIC_BUSINESS_ID`, this site's `businesses/{id}` doc id (every Firestore path is inside it).
+
+Asian Le Rewards sign-in at checkout is in the same Firebase project (members under `businesses/{id}/members`), so it needs no extra config; set `NEXT_PUBLIC_REWARDS_ENABLED=false` to hide it. `lib/rewardsConfig.ts` reads the settings (safe anywhere), `lib/rewardsFirebase.ts` hands out the site's own auth/db and `lib/rewardsClient.ts` the sign-in calls behind `hooks/useRewardsMember.ts`. On the server, `lib/server/rewards/auth.ts` verifies the member's sign-in token and `lib/server/rewards/member.ts` reads their name and points with the Admin SDK; `/api/orders` saves `order.loyalty = { memberId, memberName }` (same field as the POS). Points are earned later by the `asian-le-orders` admin app on Complete:
 
 ```
-NEXT_PUBLIC_REWARDS_API_KEY, _AUTH_DOMAIN, _PROJECT_ID, _STORAGE_BUCKET, _MESSAGING_SENDER_ID, _APP_ID
+NEXT_PUBLIC_BUSINESS_ID       # required
+NEXT_PUBLIC_REWARDS_ENABLED   # optional, "false" hides rewards
 NEXT_PUBLIC_REWARDS_APP_URL   # optional, defaults to https://rewards.asianle.ca
 ```
 
-Using points online (`lib/rewardsRules.ts`, `lib/server/rewards/points.ts`, `lib/server/orders/saveOrder.ts`, `/api/rewards/points`): 100 pts = $5 off before tax, saved as `taxBreakDown.discount` (POS shape) + `loyalty.pointsToRedeem`. Points are **not** taken at checkout — the Orders app takes them on Complete (`redeemPoints`, then `earnPoints` on the discounted subtotal) and sets `loyalty.pointsRedeemed`. To stop the same points being promised twice, `/api/orders` reads the member's balance from the rewards project as the member (their ID token over Firestore REST) and, in the same transaction as the save, subtracts `pointsToRedeem` on their other open orders.
+Using points online (`lib/rewardsRules.ts`, `lib/server/rewards/points.ts`, `lib/server/orders/saveOrder.ts`, `/api/rewards/points`): 100 pts = $5 off before tax, saved as `taxBreakDown.discount` (POS shape) + `loyalty.pointsToRedeem`. Points are **not** taken at checkout — the Orders app takes them on Complete (`redeemPoints`, then `earnPoints` on the discounted subtotal) and sets `loyalty.pointsRedeemed`. To stop the same points being promised twice, `/api/orders` reads the member's balance (Admin SDK, after verifying their ID token) and, in the same transaction as the save, subtracts `pointsToRedeem` on their other open orders.
 
 Without `SERVICE_ACCOUNT_KEY`, `/api/orders` fails cleanly (checkout UI shows "Network error", nothing crashes) — everything else in the app works fine without them.
 
@@ -68,7 +71,7 @@ All pages live under `app/(main)/` using a route group (no URL segment added). `
 Public pages are **async Server Components** with `export const revalidate = 900` (ISR, 15-min TTL) — except `/checkout`, which is `export const dynamic = "force-dynamic"` since store-hours/pause-ordering gating must never be stale. Data is fetched directly from Firestore on the server:
 
 - `lib/siteData.server.ts` — updates, gallery, daily specials (home page)
-- `lib/orderMenuData.ts` — `categories`/`menuItems`/`optionGroups`/`options` (menu page, the active model — see `ecommerce.md`)
+- `lib/orderMenuData.ts` — `webCategories`/`webMenuItems`/`webOptionGroups`/`webOptions` (menu page, the active model — see `ecommerce.md`)
 - `lib/storeSettings.ts` — `settings/store` (hours/holidays/pause-ordering)
 
 All wrap their loaders in React's `cache()` to deduplicate within a single request.
@@ -89,14 +92,17 @@ The `/menu` page doubles as the ordering UI (see `ecommerce.md` for the full Fir
 
 ### Firebase collections
 
-| Collection | Type | Used for |
+One Firebase project (`asianlepos`) is shared with the POS, Orders app, website-admin and rewards. **Everything below lives under `businesses/{NEXT_PUBLIC_BUSINESS_ID}/`** — build paths with `bizCol` / `bizDoc` (`lib/business.ts`, client SDK, also used by server components) or `adminBizCol` (`lib/server/business.ts`, Admin SDK). The website's menu collections have a `web` prefix because the POS has its own `categories` / `menuItems` / … in the same business. Security rules live in the separate `asian-le-firebase` repo.
+
+| Collection (in the business) | Type | Used for |
 |---|---|---|
-| `categories` | `FoodCategory` | Menu category groupings |
-| `menuItems` | `MenuItem` | Individual menu items |
-| `optionGroups` | `OptionGroup` | Reusable modifier groups |
-| `options` | `ItemOption` | Individual modifier choices |
+| `webCategories` | `FoodCategory` | Menu category groupings |
+| `webMenuItems` | `MenuItem` | Individual menu items |
+| `webOptionGroups` | `OptionGroup` | Reusable modifier groups |
+| `webOptions` | `ItemOption` | Individual modifier choices |
 | `settings/store` (single doc) | `StoreSettings` | Hours, holidays, pause-ordering kill switch, restaurant confirm-call number |
-| `orders` | `Order` | Written by this site (`/api/orders`), read by the separate admin app |
+| `orders` | `Order` | Written by this site (`/api/orders`), read by the Orders app and the POS |
+| `members` | — | Rewards members (read-only here: the signed-in member's doc, and their balance on the server) |
 | `dailySpecials` | `DailySpecial` | Day-of-week special configs |
 | `dailySpecialItems` | `DailySpecialItem` | Items belonging to daily specials |
 | `updates` | `ImageItem` | News/updates on home page |

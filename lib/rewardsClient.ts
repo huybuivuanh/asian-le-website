@@ -7,8 +7,9 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
-import { doc, onSnapshot, type DocumentData } from "firebase/firestore";
-import { getRewardsAuth, getRewardsDb } from "@/lib/rewardsFirebase";
+import { onSnapshot, type DocumentData } from "firebase/firestore";
+import { bizDoc } from "@/lib/business";
+import { getRewardsAuth } from "@/lib/rewardsFirebase";
 
 /**
  * Browser-side rewards sign-in: the Firebase calls behind hooks/useRewardsMember.ts, kept
@@ -63,8 +64,8 @@ function toRewardsMember(id: string, d: DocumentData, user: User): RewardsMember
 }
 
 /**
- * Follows the rewards sign-in and the signed-in member's live doc (members/{uid} — the
- * rewards rules let members read their own). Returns the unsubscribe function.
+ * Follows the rewards sign-in and the signed-in member's live doc
+ * (businesses/{id}/members/{uid} — the rules let members read their own). Returns the unsubscribe function.
  */
 export function subscribeToRewardsSession(onChange: (session: RewardsSession) => void) {
   let unsubMember: (() => void) | null = null;
@@ -78,7 +79,7 @@ export function subscribeToRewardsSession(onChange: (session: RewardsSession) =>
     }
     onChange({ status: "loading", user, member: null });
     unsubMember = onSnapshot(
-      doc(getRewardsDb(), "members", user.uid),
+      bizDoc("members", user.uid),
       (snap) =>
         onChange(
           snap.exists()

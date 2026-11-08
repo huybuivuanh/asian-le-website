@@ -1,6 +1,6 @@
 import "server-only";
+import { adminBizCol } from "@/lib/server/business";
 import { FieldValue, type DocumentReference } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
 import type { CustomerInfo } from "@/lib/server/orders/customer";
 import { OrderStatus } from "@/types/enum";
 
@@ -21,7 +21,7 @@ export function orderNumberFromId(id: string): string {
 
 /** A fresh `orders/{id}` reference and its pickup code (nothing is written yet). */
 export function newOrderRef(): { ref: DocumentReference; orderNumber: string } {
-  const ref = adminDb.collection("orders").doc();
+  const ref = adminBizCol("orders").doc();
   return { ref, orderNumber: orderNumberFromId(ref.id) };
 }
 

@@ -1,9 +1,9 @@
 "use client";
 
+import { bizDoc } from "@/lib/business";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDoc, onSnapshot } from "firebase/firestore";
 import { isStoreOpenNow } from "@/lib/availability";
 import { mapStoreSettingsDoc } from "@/lib/storeSettings";
 import OrderingUnavailableModal from "@/components/menu/OrderingUnavailableModal";
@@ -35,7 +35,7 @@ export default function OrderPickupCta({
   // With a snapshot from the page, follow the live doc (the snapshot can be 15 min stale).
   useEffect(() => {
     if (!initialStoreSettings) return;
-    return onSnapshot(doc(db, "settings", "store"), (snapshot) => {
+    return onSnapshot(bizDoc("settings", "store"), (snapshot) => {
       setLiveSettings(mapStoreSettingsDoc(snapshot.data(), initialStoreSettings));
     });
     // Subscribe once on mount; `initialStoreSettings` is only the fallback.
@@ -48,7 +48,7 @@ export default function OrderPickupCta({
     if (!settings) {
       setChecking(true);
       try {
-        settings = mapStoreSettingsDoc((await getDoc(doc(db, "settings", "store"))).data());
+        settings = mapStoreSettingsDoc((await getDoc(bizDoc("settings", "store"))).data());
       } catch {
         // Couldn't check (offline etc.): let /order show its own state.
         router.push("/order");

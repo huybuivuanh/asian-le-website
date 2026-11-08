@@ -1,8 +1,8 @@
 "use client";
 
+import { bizCol } from "@/lib/business";
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { onSnapshot } from "firebase/firestore";
 import { sortAlphabetically } from "@/lib/utils";
 import {
   mapDocToFoodCategory,
@@ -53,18 +53,18 @@ export default function LiveOrderMenu({
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const unsubCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
+    const unsubCategories = onSnapshot(bizCol("webCategories"), (snapshot) => {
       const mapped = snapshot.docs.map(mapDocToFoodCategory);
       setCategories([...mapped].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
     });
-    const unsubItems = onSnapshot(collection(db, "menuItems"), (snapshot) => {
+    const unsubItems = onSnapshot(bizCol("webMenuItems"), (snapshot) => {
       const mapped = snapshot.docs.map(mapDocToMenuItem);
       setMenuItems(sortAlphabetically(mapped, (item) => item.name));
     });
-    const unsubOptionGroups = onSnapshot(collection(db, "optionGroups"), (snapshot) => {
+    const unsubOptionGroups = onSnapshot(bizCol("webOptionGroups"), (snapshot) => {
       setOptionGroups(snapshot.docs.map(mapDocToOptionGroup));
     });
-    const unsubOptions = onSnapshot(collection(db, "options"), (snapshot) => {
+    const unsubOptions = onSnapshot(bizCol("webOptions"), (snapshot) => {
       setOptions(snapshot.docs.map(mapDocToItemOption));
     });
     const interval = setInterval(() => setNow(new Date()), TIME_RECHECK_INTERVAL_MS);

@@ -1,6 +1,6 @@
+import { bizCol } from "@/lib/business";
 import { cache } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDocs } from "firebase/firestore";
 import { DayOfWeek } from "@/types/enum";
 
 const DAY_VALUES = Object.values(DayOfWeek) as string[];
@@ -11,7 +11,7 @@ const DAY_VALUES = Object.values(DayOfWeek) as string[];
  */
 
 export async function fetchUpdatesForServer(): Promise<ImageItem[]> {
-  const snapshot = await getDocs(collection(db, "updates"));
+  const snapshot = await getDocs(bizCol("updates"));
   return snapshot.docs.map((doc) => {
     const d = doc.data();
     const name = typeof d.name === "string" ? d.name : "";
@@ -21,7 +21,7 @@ export async function fetchUpdatesForServer(): Promise<ImageItem[]> {
 }
 
 export async function fetchGalleryForServer(): Promise<ImageItem[]> {
-  const snapshot = await getDocs(collection(db, "gallery"));
+  const snapshot = await getDocs(bizCol("gallery"));
   return snapshot.docs.map((doc) => {
     const d = doc.data();
     const name = typeof d.name === "string" ? d.name : "";
@@ -31,7 +31,7 @@ export async function fetchGalleryForServer(): Promise<ImageItem[]> {
 }
 
 export async function fetchStoreHoursForServer(): Promise<StoreHour[]> {
-  const snapshot = await getDocs(collection(db, "hours"));
+  const snapshot = await getDocs(bizCol("hours"));
   return snapshot.docs
     .map((doc) => {
       const d = doc.data();
@@ -49,7 +49,7 @@ export async function fetchStoreHoursForServer(): Promise<StoreHour[]> {
 export const getStoreHours = cache(fetchStoreHoursForServer);
 
 export async function fetchDailySpecialsForServer(): Promise<DailySpecial[]> {
-  const snapshot = await getDocs(collection(db, "dailySpecials"));
+  const snapshot = await getDocs(bizCol("dailySpecials"));
   return snapshot.docs.map((doc) => {
     const d = doc.data();
     const rawRange = d.timeRange;
@@ -88,7 +88,7 @@ export async function fetchDailySpecialsForServer(): Promise<DailySpecial[]> {
 export async function fetchDailySpecialItemsForServer(): Promise<
   DailySpecialItem[]
 > {
-  const snapshot = await getDocs(collection(db, "dailySpecialItems"));
+  const snapshot = await getDocs(bizCol("dailySpecialItems"));
   return snapshot.docs.map((doc) => {
     const d = doc.data();
     const price =
