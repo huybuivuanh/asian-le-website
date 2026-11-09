@@ -43,6 +43,25 @@ const AUTH_ERRORS: Record<string, string> = {
     "This email already has an account. Sign in with your email and password.",
 };
 
+const STAFF_ACCOUNT_MESSAGE =
+  "This is a staff account. To use points, sign in with a personal rewards account.";
+
+/** POS / admin logins have a `role` claim (customers have none) and can't use rewards. */
+async function isStaffAccount(user: User): Promise<boolean> {
+  try {
+    return "role" in (await user.getIdTokenResult()).claims;
+  } catch {
+    return false; // offline: the server and security rules still refuse staff
+  }
+}
+
+/** After a sign-in: a staff account is signed straight back out with a message. */
+async function refuseStaff(user: User): Promise<string | null> {
+  if (!(await isStaffAccount(user))) return null;
+  await signOut(getRewardsAuth());
+  return STAFF_ACCOUNT_MESSAGE;
+}
+
 function errorCode(error: unknown): string | null {
   const code = (error as { code?: unknown })?.code;
   return typeof code === "string" ? code : null;
@@ -70,11 +89,16 @@ function toRewardsMember(id: string, d: DocumentData, user: User): RewardsMember
 export function subscribeToRewardsSession(onChange: (session: RewardsSession) => void) {
   let unsubMember: (() => void) | null = null;
 
-  const unsubAuth = onAuthStateChanged(getRewardsAuth(), (user) => {
+  const unsubAuth = onAuthStateChanged(getRewardsAuth(), async (user) => {
     unsubMember?.();
     unsubMember = null;
     if (!user) {
       onChange({ status: "signed-out", user: null, member: null });
+      return;
+    }
+    // Never treat a staff login as a rewards member (sign-in explains why).
+    if (await isStaffAccount(user)) {
+      await signOut(getRewardsAuth());
       return;
     }
     onChange({ status: "loading", user, member: null });
@@ -98,8 +122,8 @@ export function subscribeToRewardsSession(onChange: (session: RewardsSession) =>
 
 export async function signInWithEmail(email: string, password: string): Promise<string | null> {
   try {
-    await signInWithEmailAndPassword(getRewardsAuth(), email.trim(), password);
-    return null;
+    const { user } = await signInWithEmailAndPassword(getRewardsAuth(), email.trim(), password);
+    return await refuseStaff(user);
   } catch (error) {
     return authErrorMessage(error, "Couldn't sign in. Please try again.");
   }
@@ -107,8 +131,8 @@ export async function signInWithEmail(email: string, password: string): Promise<
 
 export async function signInWithGoogle(): Promise<string | null> {
   try {
-    await signInWithPopup(getRewardsAuth(), new GoogleAuthProvider());
-    return null;
+    const { user } = await signInWithPopup(getRewardsAuth(), new GoogleAuthProvider());
+    return await refuseStaff(user);
   } catch (error) {
     // The customer closing the Google window themselves isn't an error.
     const code = errorCode(error);

@@ -34,6 +34,8 @@ export async function verifyRewardsIdToken(idToken: string): Promise<string | nu
     const authTime = payload.auth_time;
     if (typeof payload.iat !== "number" || payload.iat > now) return null;
     if (typeof authTime !== "number" || authTime > now) return null;
+    // Staff / admin logins (with a `role` claim) aren't rewards members.
+    if ("role" in payload) return null;
     return typeof payload.sub === "string" && payload.sub ? payload.sub : null;
   } catch {
     return null;
