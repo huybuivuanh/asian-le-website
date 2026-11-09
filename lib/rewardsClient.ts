@@ -139,6 +139,7 @@ export async function signInWithGoogle(): Promise<string | null> {
     if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
       return null;
     }
+    console.error("Google sign-in failed:", error);
     return authErrorMessage(error, "Couldn't sign in with Google. Please try again.");
   }
 }
