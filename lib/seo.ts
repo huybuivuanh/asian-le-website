@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const SITE_NAME = "Asian Le Restaurant";
-export const SITE_URL = "https://asianle.ca";
+export const SITE_URL = "https://www.asianle.ca";
 export const SITE_DESCRIPTION =
   "Chinese and Vietnamese restaurant in Prince Albert, SK — dine-in, takeout, daily lunch specials, and Skip the Dishes delivery.";
 
